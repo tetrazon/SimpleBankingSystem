@@ -1,16 +1,14 @@
 package banking;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class Card {
     private final static String start = "400000";
     private final long numberLimit = 1_000_000_000L;
     private static List<String> numberList = new ArrayList<>();
+    private static int luhnLastIndex = 14;//1-15 digits to calculate 16th digit
     private int balance;
     private String number;
     private String pin;
@@ -24,6 +22,12 @@ public class Card {
         this.pin = pin;
     }
 
+    public Card(String number, String pin, int balance) {
+        this.number = number;
+        this.pin = pin;
+        this.balance = balance;
+    }
+
     private void generateNumberAndPin() {
         Random random = new Random(System.currentTimeMillis());
         long numberPart = Math.abs(random.nextLong()) % numberLimit;
@@ -31,8 +35,8 @@ public class Card {
             numberPart += 100_000_000L;
         }
         String startNumber = start + numberPart;
-        applyLuhn(startNumber);
-         while (numberList.contains(number) && !number.endsWith(String.valueOf(applyLuhn(startNumber)))) {
+        number = applyLuhn(startNumber);
+         while (numberList.contains(number) && !number.equals(applyLuhn(number))) { //number.charAt(number.length()-1) != applyLuhn(startNumber).charAt(startNumber.length()-1)
              startNumber = start + random.nextLong() % numberLimit;
              applyLuhn(startNumber);
          }
@@ -44,13 +48,14 @@ public class Card {
          pin = String.valueOf(intPin);
     }
 
-    public int applyLuhn(String startNumber) {
+    public static String applyLuhn(String startNumber) {
+        if (startNumber.length() == 16){
+            startNumber = startNumber.substring(0, startNumber.length() -1);
+        }
         int[] intArr = startNumber.chars().map(ch -> Character.digit(ch, 10)).toArray();
-        int lastIndex = intArr.length;
         int checksum = 0;
         //System.out.println("    " + number);
-
-        for (int i = 0; i < lastIndex; i++ ) {
+        for (int i = 0; i < luhnLastIndex; i++ ) {
             if((i + 1) % 2 != 0) {
                 intArr[i] *= 2;
             }
@@ -59,7 +64,7 @@ public class Card {
         //System.out.println("*2: " +
         //        Arrays.stream(intArr).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining(" ")));
 
-        for (int i = 0; i < lastIndex; i++) {
+        for (int i = 0; i < luhnLastIndex; i++) {
             if (intArr[i] > 9) {
                 intArr[i] -= 9;
             }
@@ -68,18 +73,12 @@ public class Card {
         //System.out.println("-9: " +
          //       Arrays.stream(intArr).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining(" ")));
 
-        for (int i = 0; i < lastIndex; i++) {
+        for (int i = 0; i < luhnLastIndex; i++) {
             checksum += intArr[i];
         }
-        //System.out.println();
-        //System.out.println("raw checksum: " + checksum);
         checksum = checksum %10 == 0 ? 0 : 10 - checksum % 10;
-        number = startNumber + checksum;
-        //System.out.println("checksum: " + checksum);
-        return checksum;
-        //System.out.println(number);
-        //
-        //return number + checksum;
+        //number = startNumber + checksum;
+        return startNumber + checksum;
     }
 
     public String getNumber() {
@@ -96,10 +95,5 @@ public class Card {
 
     public void setBalance(int balance) {
         this.balance = balance;
-    }
-
-    public static void main(String[] args) {
-        Card card = new Card("4000003957282439", "1111");
-        card.applyLuhn("400000395728243");
     }
 }
