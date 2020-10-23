@@ -46,7 +46,8 @@ public class CardService {
     }
 
     private boolean isContainsCard(Card cardToCheck) {
-        if (cardRepository.getCardByNumber(cardToCheck.getNumber()) == null){
+        Card cardByNumber = cardRepository.getCardByNumber(cardToCheck.getNumber());
+        if (cardByNumber == null || !cardByNumber.getPin().equals(cardToCheck.getPin())){
             return false;
         }
        return true;
@@ -99,7 +100,7 @@ public class CardService {
             System.out.println("You can't transfer money to the same account!");
             return;
         } else if (!stringCardTo.equals(Card.applyLuhn(stringCardTo))){
-            System.out.println("Probably you made mistake in the card number. Please try again!");
+            System.out.println("Probably you made mistake in the card number. Please try again!\n");
             return;
         } else if (cardRepository.getCardByNumber(stringCardTo) == null){
             System.out.println("Such a card does not exist.");

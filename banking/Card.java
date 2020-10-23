@@ -30,14 +30,11 @@ public class Card {
 
     private void generateNumberAndPin() {
         Random random = new Random(System.currentTimeMillis());
-        long numberPart = Math.abs(random.nextLong()) % numberLimit;
-        if (numberPart < 100_000_000L) {
-            numberPart += 100_000_000L;
-        }
+        long numberPart = getNumberPart(random);
         String startNumber = start + numberPart;
         number = applyLuhn(startNumber);
          while (numberList.contains(number) && !number.equals(applyLuhn(number))) { //number.charAt(number.length()-1) != applyLuhn(startNumber).charAt(startNumber.length()-1)
-             startNumber = start + random.nextLong() % numberLimit;
+             startNumber = start + getNumberPart(random);
              applyLuhn(startNumber);
          }
 
@@ -48,36 +45,29 @@ public class Card {
          pin = String.valueOf(intPin);
     }
 
-    public static String applyLuhn(String startNumber) {
-        if (startNumber.length() == 16){
-            startNumber = startNumber.substring(0, startNumber.length() -1);
+    private long getNumberPart(Random random) {
+        long numberPart = Math.abs(random.nextLong()) % numberLimit;
+        if (numberPart < 100_000_000L) {
+            numberPart += 100_000_000L;
         }
+        return numberPart;
+    }
+
+    public static String applyLuhn(String startNumber) {
+        startNumber = startNumber.substring(0, 15);
         int[] intArr = startNumber.chars().map(ch -> Character.digit(ch, 10)).toArray();
         int checksum = 0;
-        //System.out.println("    " + number);
-        for (int i = 0; i < luhnLastIndex; i++ ) {
-            if((i + 1) % 2 != 0) {
-                intArr[i] *= 2;
+        int digitToAdd = 0;
+
+        for (int i = 0; i < intArr.length; i++ ) {
+            digitToAdd = intArr[i];
+            if(i % 2 == 0) {
+                digitToAdd = digitToAdd * 2 > 9 ? digitToAdd * 2 - 9 : digitToAdd * 2;
             }
-        }
-
-        //System.out.println("*2: " +
-        //        Arrays.stream(intArr).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining(" ")));
-
-        for (int i = 0; i < luhnLastIndex; i++) {
-            if (intArr[i] > 9) {
-                intArr[i] -= 9;
-            }
-        }
-
-        //System.out.println("-9: " +
-         //       Arrays.stream(intArr).mapToObj(i -> String.valueOf(i)).collect(Collectors.joining(" ")));
-
-        for (int i = 0; i < luhnLastIndex; i++) {
-            checksum += intArr[i];
+            checksum += digitToAdd;
         }
         checksum = checksum %10 == 0 ? 0 : 10 - checksum % 10;
-        //number = startNumber + checksum;
+        //System.out.println(startNumber + checksum);
         return startNumber + checksum;
     }
 
@@ -96,4 +86,5 @@ public class Card {
     public void setBalance(int balance) {
         this.balance = balance;
     }
+
 }
